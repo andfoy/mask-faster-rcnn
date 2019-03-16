@@ -14,20 +14,20 @@ len=${#array[@]}
 EXTRA_ARGS=${array[@]:3:$len}
 EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
-case ${DATASET} in
-  endovis_2017)
-    TRAIN_IMDB="endovis_2017_train"
-    TEST_IMDB="endovis_2017_val"
-    ITERS=1250000
-    ANCHORS="[4,8,16,32]"
-    RATIOS="[0.5,1,2]"
-    DATA_DIR="/input"
-    ;;
-  *)
-    echo "No dataset given"
-    exit
-    ;;
-esac
+# case ${DATASET} in
+#   endovis_2017)
+TRAIN_IMDB="endovis_2017_train"
+TEST_IMDB="endovis_2017_val"
+ITERS=1250000
+ANCHORS="[4,8,16,32]"
+RATIOS="[0.5,1,2]"
+DATA_DIR="/input"
+#     ;;
+#   *)
+#     echo "No dataset given"
+#     exit
+#     ;;
+# esac
 
 LOG="experiments/logs/test_${NET}_${TRAIN_IMDB}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
 exec &> >(tee -a "$LOG")
