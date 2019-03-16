@@ -14,10 +14,11 @@ __sets = {}
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
 from datasets.refer_coco import refer_coco
+from datasets.endovis import endovis_coco
 
 import numpy as np
 
-# Set up voc_<year>_<split> 
+# Set up voc_<year>_<split>
 for year in ['2007', '2012']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'voc_{}_{}'.format(year, split)
@@ -40,6 +41,12 @@ for dataset in ['refcoco', 'refcocog']:
   for split in ['train', 'val', 'test']:
     name = '%s_%s' % (dataset, split)
     __sets[name] = (lambda dataset=dataset, split=split: refer_coco(dataset=dataset, split=split))
+
+for split in ['train', 'val']:
+  def dataset_closure(*args, **kwargs):
+      return endovis_coco('2017', split)
+  name = f'endovis_2017_{split}'
+  __sets[name] = dataset_closure
 
 
 def get_imdb(name):

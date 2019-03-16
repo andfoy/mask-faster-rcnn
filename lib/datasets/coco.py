@@ -65,7 +65,7 @@ class coco(imdb):
     self._gt_splits = ('train', 'val', 'minival')
 
   def _get_ann_file(self):
-    if self._image_set.find('test') != 0:  
+    if self._image_set.find('test') != 0:
       # 'train', 'val', 'minival', 'valminusminival', train_minus_refer_valtest'
       prefix = 'instances'
     else:

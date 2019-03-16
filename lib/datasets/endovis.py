@@ -1,7 +1,7 @@
 # --------------------------------------------------------
 # Fast/er R-CNN
 # Licensed under The MIT License [see LICENSE for details]
-# Written by Licheng Yu
+# Written by Ross Girshick and Xinlei Chen
 # --------------------------------------------------------
 from __future__ import absolute_import
 from __future__ import division
@@ -24,18 +24,17 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from pycocotools import mask as COCOmask
 
-class refer_coco(imdb):
-  def __init__(self, dataset, split):
-    imdb_name = '%s_%s' % (dataset, split)
-    imdb.__init__(self, imdb_name)
-
+class endovis_coco(imdb):
+  def __init__(self, image_set, year):
+    imdb.__init__(self, 'endovis_' + year + '_' + image_set)
     # COCO specific config options
     self.config = {'use_salt': True,
                    'cleanup': True}
-
     # name, paths
-    self._image_set = split
-    self._data_path = osp.join(cfg.DATA_DIR, 'refer_coco')
+    self._year = year
+    self._image_set = image_set
+    self._data_path = osp.join(
+      cfg.DATA_DIR, 'data_endovis2017_instances_cropped_80_20', image_set)
     # load COCO API, classes, class <-> id mappings
     self._COCO = COCO(self._get_ann_file())
     cats = self._COCO.loadCats(self._COCO.getCatIds())
@@ -52,15 +51,20 @@ class refer_coco(imdb):
     # For example, minival2014 is a random 5000 image subset of val2014.
     # This mapping tells us where the view's images and proposals come from.
     self._view_map = {
-      'train': 'train2014',
-      'val': 'train2014',
-      'test': 'train2014'
+      'train': 'train',  # 5k val2014 subset
+      'val': 'val'
     }
-    self._data_name = self._view_map[self._image_set]
+    coco_name = image_set + year  # e.g., "val2014"
+    self._data_name = (self._view_map[coco_name]
+                       if coco_name in self._view_map
+                       else coco_name)
+    # Dataset splits that have ground-truth annotations (test splits
+    # do not have gt annotations)
+    self._gt_splits = ('train', 'val')
 
   def _get_ann_file(self):
-    # name = _name = refer_split or refer_clean_split
-    return osp.join(self._data_path, 'annotations', self.name+'.json')
+    return osp.join(self._data_path,
+                    f'RobotSeg{self.year}_inst_class_{self.image_set}.json')
 
   def _load_image_set_index(self):
     """
@@ -68,6 +72,11 @@ class refer_coco(imdb):
     """
     image_ids = self._COCO.getImgIds()
     return image_ids
+
+  def _get_widths(self):
+    anns = self._COCO.loadImgs(self._image_index)
+    widths = [ann['width'] for ann in anns]
+    return widths
 
   def image_path_at(self, i):
     """
@@ -79,10 +88,15 @@ class refer_coco(imdb):
     """
     Construct an image path from the image's "index" identifier.
     """
-    # Example image path for index=119993: images/train2014/COCO_train2014_000000119993.jpg
-    file_name = ('COCO_' + self._data_name + '_' + str(index).zfill(12) + '.jpg')
-    image_path = osp.join(self._data_path, 'images', self._data_name, file_name)
-    assert osp.exists(image_path), 'Path does not exist: %s' % image_path
+    # Example image path for index=119993:
+    #   images/train2014/COCO_train2014_000000119993.jpg
+    # file_name = ('COCO_' + self._data_name + '_' +
+    #              str(index).zfill(12) + '.jpg')
+    img = self._COCO.loadImgs(index)[0]
+    file_name = img['file_name']
+    image_path = osp.join(self._data_path, 'images', file_name)
+    assert osp.exists(image_path), \
+      'Path does not exist: {}'.format(image_path)
     return image_path
 
   def gt_roidb(self):
@@ -97,12 +111,12 @@ class refer_coco(imdb):
       print('{} gt roidb loaded from {}'.format(self.name, cache_file))
       return roidb
 
-    # each gt_roidb item is {width, height, boxes, gt_classes, gt_overlaps, flipped, seg_areas}
-    gt_roidb = [self._load_coco_annotation(index) for index in self._image_index]
+    gt_roidb = [self._load_coco_annotation(index)
+                for index in self._image_index]
 
     with open(cache_file, 'wb') as fid:
       pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)
-    print('wrote gt roidb to %s' % cache_file)
+    print('wrote gt roidb to {}'.format(cache_file))
     return gt_roidb
 
   def _load_coco_annotation(self, index):
@@ -119,7 +133,7 @@ class refer_coco(imdb):
     objs = self._COCO.loadAnns(annIds)
     # Sanitize bboxes -- some are invalid
     valid_objs = []
-    for obj in objs:
+    for i, obj in enumerate(objs):
       x1 = np.max((0, obj['bbox'][0]))
       y1 = np.max((0, obj['bbox'][1]))
       x2 = np.min((width - 1, x1 + np.max((0, obj['bbox'][2] - 1))))
@@ -130,6 +144,7 @@ class refer_coco(imdb):
     objs = valid_objs
     num_objs = len(objs)
 
+    segms = []
     boxes = np.zeros((num_objs, 4), dtype=np.uint16)
     gt_classes = np.zeros((num_objs), dtype=np.int32)
     overlaps = np.zeros((num_objs, self.num_classes), dtype=np.float32)
@@ -146,6 +161,7 @@ class refer_coco(imdb):
       boxes[ix, :] = obj['clean_bbox']
       gt_classes[ix] = cls
       seg_areas[ix] = obj['area']
+      segms.append(obj['segmentation'])
       if obj['iscrowd']:
         # Set overlap to -1 for all classes for crowd objects
         # so they will be excluded during training
@@ -158,6 +174,7 @@ class refer_coco(imdb):
     return {'width': width,
             'height': height,
             'boxes': boxes,
+            'segms': segms,
             'gt_classes': gt_classes,
             'gt_overlaps': overlaps,
             'flipped': False,
@@ -179,6 +196,7 @@ class refer_coco(imdb):
       entry = {'width': widths[i],
                'height': self.roidb[i]['height'],
                'boxes': boxes,
+               'segms': self.roidb[i]['segms'],
                'gt_classes': self.roidb[i]['gt_classes'],
                'gt_overlaps': self.roidb[i]['gt_overlaps'],
                'flipped': True,
@@ -227,8 +245,7 @@ class refer_coco(imdb):
     print('~~~~ Summary metrics ~~~~')
     coco_eval.summarize()
 
-  def _do_detection_eval(self, res_file, output_dir):
-    ann_type = 'bbox'
+  def _do_detection_eval(self, res_file, output_dir, ann_type='bbox'):
     coco_dt = self._COCO.loadRes(res_file)
     coco_eval = COCOeval(self._COCO, coco_dt)
     coco_eval.params.useSegm = (ann_type == 'segm')
@@ -240,7 +257,7 @@ class refer_coco(imdb):
       pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
     print('Wrote COCO eval results to: {}'.format(eval_file))
 
-  def _coco_results_one_category(self, boxes, cat_id):
+  def _coco_results_one_category(self, boxes, rles, cat_id):
     results = []
     for im_ind, index in enumerate(self.image_index):
       dets = boxes[im_ind].astype(np.float)
@@ -251,14 +268,16 @@ class refer_coco(imdb):
       ys = dets[:, 1]
       ws = dets[:, 2] - xs + 1
       hs = dets[:, 3] - ys + 1
+      rles_at_im = rles[im_ind]  # rles for this image
       results.extend(
         [{'image_id': index,
           'category_id': cat_id,
           'bbox': [xs[k], ys[k], ws[k], hs[k]],
-          'score': scores[k]} for k in range(dets.shape[0])])
+          'score': scores[k],
+          'segmentation': rles_at_im[k]} for k in range(dets.shape[0])])
     return results
 
-  def _write_coco_results_file(self, all_boxes, res_file):
+  def _write_coco_results_file(self, all_boxes, all_rles, res_file):
     # [{"image_id": 42,
     #   "category_id": 18,
     #   "bbox": [258.15,41.29,348.26,243.78],
@@ -271,20 +290,25 @@ class refer_coco(imdb):
                                                        self.num_classes - 1))
       coco_cat_id = self._class_to_coco_cat_id[cls]
       results.extend(self._coco_results_one_category(all_boxes[cls_ind],
+                                                     all_rles[cls_ind],
                                                      coco_cat_id))
     print('Writing results json to {}'.format(res_file))
     with open(res_file, 'w') as fid:
       json.dump(results, fid)
 
-  def evaluate_detections(self, all_boxes, output_dir):
-    res_file = osp.join(output_dir, ('detections_' + self._image_set + '_results'))
+  def evaluate_detections(self, all_boxes, all_rles, output_dir):
+    res_file = osp.join(output_dir, ('detections_' +
+                                     self._image_set +
+                                     self._year +
+                                     '_results'))
     if self.config['use_salt']:
       res_file += '_{}'.format(str(uuid.uuid4()))
     res_file += '.json'
-    self._write_coco_results_file(all_boxes, res_file)
+    self._write_coco_results_file(all_boxes, all_rles, res_file)
     # Only do evaluation on non-test sets
-    # if self._image_set.find('test') == -1:
-    self._do_detection_eval(res_file, output_dir)
+    if self._image_set.find('test') == -1:
+      self._do_detection_eval(res_file, output_dir, 'bbox')
+      self._do_detection_eval(res_file, output_dir, 'segm')
     # Optionally cleanup results json file
     if self.config['cleanup']:
       os.remove(res_file)
