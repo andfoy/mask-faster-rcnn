@@ -15,12 +15,13 @@ EXTRA_ARGS=${array[@]:3:$len}
 EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 case ${DATASET} in
-  coco_minus_refer)
+  endovis_2017)
     TRAIN_IMDB="endovis_2017_train"
     TEST_IMDB="endovis_2017_val"
     ITERS=1250000
     ANCHORS="[4,8,16,32]"
     RATIOS="[0.5,1,2]"
+    DATA_DIR="/input"
     ;;
   *)
     echo "No dataset given"
@@ -47,12 +48,12 @@ if [[ ! -z  ${EXTRA_ARGS_SLUG}  ]]; then
     --cfg experiments/cfgs/${NET}.yml \
     --tag ${EXTRA_ARGS_SLUG} \
     --net ${NET} \
-    --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} # ${EXTRA_ARGS}
+    --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} DATA_DIR ${DATA_DIR} # ${EXTRA_ARGS}
 else
   CUDA_VISIBLE_DEVICES=${GPU_ID} python ./tools/test_net.py \
     --imdb ${TEST_IMDB} \
     --model ${NET_FINAL} \
     --cfg experiments/cfgs/${NET}.yml \
     --net ${NET} \
-    --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} # {EXTRA_ARGS}
+    --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} DATA_DIR ${DATA_DIR} # {EXTRA_ARGS}
 fi

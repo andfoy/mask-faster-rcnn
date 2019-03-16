@@ -15,13 +15,14 @@ EXTRA_ARGS=${array[@]:3:$len}
 EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 case ${DATASET} in
-  coco_minus_refer)
+  endovis_2017)
     TRAIN_IMDB="endovis_2017_train"
     TEST_IMDB="endovis_2017_val"
     STEPSIZE="[800000]"
     ITERS=1250000
     ANCHORS="[4,8,16,32]"
     RATIOS="[0.5,1,2]"
+    DATA_DIR="/input"
     ;;
   *)
     echo "No dataset given"
@@ -52,7 +53,7 @@ if [ ! -f ${NET_FINAL}.index ]; then
             --tag ${EXTRA_ARGS_SLUG} \
             --net ${NET} \
             --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} \
-            TRAIN.STEPSIZE ${STEPSIZE} # ${EXTRA_ARGS}
+            TRAIN.STEPSIZE ${STEPSIZE} DATA_DIR ${DATA_DIR} # ${EXTRA_ARGS}
     else
         CUDA_VISIBLE_DEVICES=${GPU_ID} time python ./tools/trainval_net.py \
             --weight data/imagenet_weights/${NET}.pth \
@@ -62,7 +63,7 @@ if [ ! -f ${NET_FINAL}.index ]; then
             --cfg experiments/cfgs/${NET}.yml \
             --net ${NET} \
             --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} \
-            TRAIN.STEPSIZE ${STEPSIZE} # ${EXTRA_ARGS}
+            TRAIN.STEPSIZE ${STEPSIZE} DATA_DIR ${DATA_DIR} # ${EXTRA_ARGS}
     fi
 fi
 
