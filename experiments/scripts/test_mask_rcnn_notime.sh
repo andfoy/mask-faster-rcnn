@@ -16,8 +16,8 @@ EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 case ${DATASET} in
   coco_minus_refer)
-    TRAIN_IMDB="coco_2014_train_minus_refer_valtest+coco_2014_valminusminival"
-    TEST_IMDB="coco_2014_minival"
+    TRAIN_IMDB="endovis_2017_train"
+    TEST_IMDB="endovis_2017_val"
     ITERS=1250000
     ANCHORS="[4,8,16,32]"
     RATIOS="[0.5,1,2]"
@@ -56,4 +56,3 @@ else
     --net ${NET} \
     --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} # {EXTRA_ARGS}
 fi
-
