@@ -64,7 +64,7 @@ class endovis_coco(imdb):
 
   def _get_ann_file(self):
     return osp.join(self._data_path,
-                    f'RobotSeg{self.year}_inst_class_{self.image_set}.json')
+                    f'RobotSeg{self._year}_inst_class_{self._image_set}.json')
 
   def _load_image_set_index(self):
     """

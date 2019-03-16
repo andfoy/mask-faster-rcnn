@@ -44,7 +44,7 @@ for dataset in ['refcoco', 'refcocog']:
 
 for split in ['train', 'val']:
   def dataset_closure(*args, **kwargs):
-      return endovis_coco('2017', split)
+      return endovis_coco(split, '2017')
   name = f'endovis_2017_{split}'
   __sets[name] = dataset_closure
 

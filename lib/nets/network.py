@@ -28,7 +28,7 @@ from layer_utils.roi_pooling.roi_pool import RoIPoolFunction
 
 from model.config import cfg
 
-import tensorboardX as tb 
+import tensorboardX as tb
 
 from scipy.misc import imresize
 
@@ -139,7 +139,7 @@ class Network(nn.Module):
     else:
       grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, cfg.POOLING_SIZE, cfg.POOLING_SIZE)))
       crops = F.grid_sample(bottom.expand(rois.size(0), bottom.size(1), bottom.size(2), bottom.size(3)), grid)
-    
+
     return crops
 
   def _crop_pool_layer_align(self, bottom, rois, im_info, max_pool=True):
@@ -172,7 +172,7 @@ class Network(nn.Module):
     else:
       grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, cfg.POOLING_SIZE, cfg.POOLING_SIZE)))
       crops = F.grid_sample(bottom.expand(rois.size(0), bottom.size(1), bottom.size(2), bottom.size(3)), grid)
-    
+
     return crops
 
   def _anchor_target_layer(self, rpn_cls_score):
@@ -235,7 +235,7 @@ class Network(nn.Module):
     # change it so that the score has 2 as its channel size
     rpn_cls_score_reshape = rpn_cls_score.view(self._batch_size, 2, -1, rpn_cls_score.size()[-1]) # batch * 2 * (num_anchors*h) * w
     rpn_cls_prob_reshape = F.softmax(rpn_cls_score_reshape)  # batch * 2 * (num_anchors*h) * w
-    
+
     # Move channel to the last dimenstion, to fit the input of python functions
     rpn_cls_prob = rpn_cls_prob_reshape.view_as(rpn_cls_score).permute(0, 2, 3, 1) # batch * h * w * (num_anchors * 2)
     rpn_cls_score = rpn_cls_score.permute(0, 2, 3, 1) # batch * h * w * (num_anchors * 2)
@@ -290,12 +290,12 @@ class Network(nn.Module):
     - mask_prob   : (num_rois, 80, 14, 14) range [0, 1]
     """
     upsampled_m = self.mask_up_sampling(spatial_fc7)  # (n, 256, 14, 14)
-    upsampled_m = F.relu(upsampled_m)   
+    upsampled_m = F.relu(upsampled_m)
     mask_score = self.mask_pred_net(upsampled_m) # (n, 80, 14, 14)
     mask_prob  = F.sigmoid(mask_score)           # (n, 80, 14, 14) range (0,1)
-    
-    self._predictions['mask_score'] = mask_score 
-    self._predictions['mask_prob'] = mask_prob   
+
+    self._predictions['mask_score'] = mask_score
+    self._predictions['mask_prob'] = mask_prob
 
     return mask_prob
 
@@ -334,7 +334,7 @@ class Network(nn.Module):
       else:
         m.weight.data.normal_(mean, stddev)
       m.bias.data.zero_()
-      
+
     # rpn
     normal_init(self.rpn_net, 0, 0.01, cfg.TRAIN.TRUNCATED)
     normal_init(self.rpn_cls_score_net, 0, 0.01, cfg.TRAIN.TRUNCATED)
@@ -447,7 +447,7 @@ class Network(nn.Module):
           summaries.append(self._add_train_summary(k, var))
 
       self._image_gt_summaries = {}
-    
+
     return summaries
 
   def _predict(self):
@@ -464,7 +464,7 @@ class Network(nn.Module):
 
     # build the anchors for the image
     self._anchor_component(net_conv.size(2), net_conv.size(3))
-   
+
     rois = self._region_proposal(net_conv)
     if cfg.POOLING_MODE == 'crop':
       if cfg.POOLING_ALIGN == True:
@@ -476,7 +476,7 @@ class Network(nn.Module):
 
     if self._mode == 'TRAIN':
       torch.backends.cudnn.benchmark = True # benchmark because now the input size are fixed
-    
+
     spatial_fc7 = self._head_to_tail(pool5)  # (num_rois, 2048, 7, 7)
     cls_prob, bbox_pred = self._region_classification(spatial_fc7)
 
@@ -487,7 +487,7 @@ class Network(nn.Module):
       mask_prob = self._mask_prediction(spatial_fc7)  # (num_fg, num_classes, 14, 14)
     else:
       mask_prob = self._mask_prediction(spatial_fc7)  # (num_rois, num_classes, 14, 14)
-    
+
     for k in self._predictions.keys():
       self._score_summaries[k] = self._predictions[k]
 
@@ -505,7 +505,7 @@ class Network(nn.Module):
     assert self._mode == 'TEST', 'only support testing mode'
 
     num_boxes = boxes.shape[0]
-    rois = np.hstack([np.zeros((num_boxes, 1)), boxes]).astype(np.float32) # [0xyxy] 
+    rois = np.hstack([np.zeros((num_boxes, 1)), boxes]).astype(np.float32) # [0xyxy]
     rois = Variable(torch.from_numpy(rois).cuda(), volatile=True)
     if cfg.POOLING_MODE == 'crop':
       if cfg.POOLING_ALIGN == True:
@@ -515,7 +515,7 @@ class Network(nn.Module):
     else:
       pool5 = self._roi_pool_layer(net_conv, rois)
 
-    spatial_fc7 = self._head_to_tail(pool5) 
+    spatial_fc7 = self._head_to_tail(pool5)
     mask_prob = self._mask_prediction(spatial_fc7) # (n, num_classes, 14, 14)
 
     # get masks from labels
@@ -542,7 +542,7 @@ class Network(nn.Module):
 
     self._predictions['net_conv'] = net_conv
 
-    if mode == 'TEST':   
+    if mode == 'TEST':
       if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
         stds = bbox_pred.data.new(cfg.TRAIN.BBOX_NORMALIZE_STDS).repeat(self._num_classes).unsqueeze(0).expand_as(bbox_pred)
         means = bbox_pred.data.new(cfg.TRAIN.BBOX_NORMALIZE_MEANS).repeat(self._num_classes).unsqueeze(0).expand_as(bbox_pred)
@@ -560,7 +560,7 @@ class Network(nn.Module):
 
   # only useful during testing mode
   def test_image(self, image, im_info):
-    """Return 
+    """Return
     - cls_score : ndarray float32 (n, num_classes)
     - cls_prob  : ndarray float32 (n, num_classes)
     - bbox_pred : ndarray float32 (n, num_classes * 4)
@@ -579,7 +579,7 @@ class Network(nn.Module):
   def delete_intermediate_states(self):
     # Delete intermediate result to save memory
     for d in [self._losses, self._predictions, self._anchor_targets, self._proposal_targets]:
-      for k in d.keys():
+      for k in list(d.keys()):
         del d[k]
 
   def get_summary(self, blobs):
@@ -631,7 +631,7 @@ class Network(nn.Module):
     self._losses['total_loss'].backward()
     train_op.step()
     self.delete_intermediate_states()
-    
+
 
   # def _predict_masks_from_boxes(self, net_conv, boxes):
   #   """
@@ -639,12 +639,12 @@ class Network(nn.Module):
   #   - net_conv : Variable cuda (1, 1024, H, W)
   #   - boxes    : ndarray (n, num_classes * 4) in scaled image
   #   Return
-  #   - masks    : ndarray (n, num_classes, 14, 14) 
+  #   - masks    : ndarray (n, num_classes, 14, 14)
   #   """
   #   num_boxes = boxes.shape[0]
   #   boxes = Variable(torch.from_numpy(boxes).cuda())
   #   boxes = boxes.view(num_boxes*self._num_classes, 4) # (NC, 4)
-  #   rois = torch.cat([Variable(boxes.data.new(num_boxes*self._num_classes, 1).zero_()), 
+  #   rois = torch.cat([Variable(boxes.data.new(num_boxes*self._num_classes, 1).zero_()),
   #                     boxes], 1) # (NC, 5) [0xyxy]
   #   rois = rois.view(num_boxes, self._num_classes, 5) # (N, C, 5)
 
@@ -656,7 +656,7 @@ class Network(nn.Module):
   #       cth_pool5 = self._crop_pool_layer(net_conv, cth_rois)
   #     else:
   #       cth_pool5 = self._roi_pool_layer(net_conv, cth_rois)
-      
+
   #     cth_spatial_fc7 = self._head_to_tail(cth_pool5)    # (N, 2048, 7, 7)
   #     mask_prob = self._mask_prediction(cth_spatial_fc7) # (N, C, 14, 14)
   #     cth_mask_prob = mask_prob[:,c,:,:] # (N, 14, 14)

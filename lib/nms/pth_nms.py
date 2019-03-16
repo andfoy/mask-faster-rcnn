@@ -1,5 +1,5 @@
 import torch
-from _ext import nms
+from ._ext import nms
 import numpy as np
 
 def pth_nms(dets, thresh):
@@ -43,4 +43,3 @@ def pth_nms(dets, thresh):
 
     return order[keep[:num_out[0]].cuda()].contiguous()
     # return order[keep[:num_out[0]]].contiguous()
-
