@@ -16,8 +16,8 @@ EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 # case ${DATASET} in
 #   endovis_2017)
-TRAIN_IMDB="endovis_2017_train"
-TEST_IMDB="endovis_2017_val"
+TRAIN_IMDB="endovis_2017_group1"
+TEST_IMDB="endovis_2017_group2"
 STEPSIZE="[800000]"
 ITERS=1250000
 ANCHORS="[4,8,16,32]"

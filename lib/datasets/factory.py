@@ -11,6 +11,7 @@ from __future__ import division
 from __future__ import print_function
 
 __sets = {}
+import functools
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
 from datasets.refer_coco import refer_coco
@@ -42,11 +43,12 @@ for dataset in ['refcoco', 'refcocog']:
     name = '%s_%s' % (dataset, split)
     __sets[name] = (lambda dataset=dataset, split=split: refer_coco(dataset=dataset, split=split))
 
-for split in ['train', 'val']:
-  def dataset_closure(*args, **kwargs):
-      return endovis_coco(split, '2017')
+# def dataset_closure(*args, **kwargs):
+    # return endovis_coco(split, '2017')
+
+for split in ['group1', 'group2']:
   name = f'endovis_2017_{split}'
-  __sets[name] = dataset_closure
+  __sets[name] = functools.partial(endovis_coco, split, '2017')
 
 
 def get_imdb(name):

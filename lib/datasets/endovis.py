@@ -34,7 +34,7 @@ class endovis_coco(imdb):
     self._year = year
     self._image_set = image_set
     self._data_path = osp.join(
-      cfg.DATA_DIR, 'data_endovis2017_instances_cropped_80_20', image_set)
+      cfg.DATA_DIR, 'data_endovis2017_instances_cropped', image_set)
     # load COCO API, classes, class <-> id mappings
     self._COCO = COCO(self._get_ann_file())
     cats = self._COCO.loadCats(self._COCO.getCatIds())
