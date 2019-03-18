@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+import torch.autograd
 
 import math
 import utils.timer
@@ -530,6 +531,8 @@ class Network(nn.Module):
     self._image_gt_summaries['image'] = image
     self._image_gt_summaries['gt_boxes'] = gt_boxes
     self._image_gt_summaries['im_info'] = im_info
+    if mode != 'TRAIN':
+      torch.autograd.enable_grad(False)
 
     self._image = Variable(torch.from_numpy(image.transpose([0,3,1,2])).cuda(), volatile=mode == 'TEST')
     self._im_info = im_info # No need to change; actually it can be an list
