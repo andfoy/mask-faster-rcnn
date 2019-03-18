@@ -427,26 +427,26 @@ class Network(nn.Module):
     """
     summaries = []
     # Add image gt
-    summaries.append(self._add_gt_image_summary())
+    # summaries.append()
     # Add event_summaries
-    for key, var in self._event_summaries.items():
-      summaries.append(tb.summary.scalar(key, var.data[0]))
-    self._event_summaries = {}
-    if not val:
-      # Add score summaries
-      for key, var in self._score_summaries.items():
-        summaries.append(self._add_score_summary(key, var))
-      self._score_summaries = {}
-      # Add act summaries
-      for key, var in self._act_summaries.items():
-        summaries += self._add_act_summary(key, var)
-      self._act_summaries = {}
-      # Add train summaries
-      for k, var in dict(self.named_parameters()).items():
-        if var.requires_grad:
-          summaries.append(self._add_train_summary(k, var))
+    # for key, var in self._event_summaries.items():
+    #   summaries.append(tb.summary.scalar(key, var.data[0]))
+    # self._event_summaries = {}
+    # if not val:
+    #   # Add score summaries
+    #   for key, var in self._score_summaries.items():
+    #     summaries.append(self._add_score_summary(key, var))
+    #   self._score_summaries = {}
+    #   # Add act summaries
+    #   for key, var in self._act_summaries.items():
+    #     summaries += self._add_act_summary(key, var)
+    #   self._act_summaries = {}
+    #   # Add train summaries
+    #   for k, var in dict(self.named_parameters()).items():
+    #     if var.requires_grad:
+    #       summaries.append(self._add_train_summary(k, var))
 
-      self._image_gt_summaries = {}
+    # self._image_gt_summaries = {}
 
     return summaries
 
@@ -586,9 +586,9 @@ class Network(nn.Module):
     self.eval()
     self.forward(blobs['data'], blobs['im_info'], blobs['gt_boxes'], blobs['gt_masks'])
     self.train()
-    summary = self._run_summary_op(True)
+    # summary = self._run_summary_op(True)
 
-    return summary
+    return []
 
   def train_step(self, blobs, train_op):
     self.forward(blobs['data'], blobs['im_info'], blobs['gt_boxes'], blobs['gt_masks'])
@@ -619,7 +619,7 @@ class Network(nn.Module):
     train_op.zero_grad()
     self._losses['total_loss'].backward()
     train_op.step()
-    summary = self._run_summary_op()
+    # summary = self._run_summary_op()
 
     self.delete_intermediate_states()
 
