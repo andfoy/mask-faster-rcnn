@@ -269,6 +269,8 @@ class endovis_coco(imdb):
       ws = dets[:, 2] - xs + 1
       hs = dets[:, 3] - ys + 1
       rles_at_im = rles[im_ind]  # rles for this image
+      for rle in rles_at_im:
+        rle['counts'] = str(rle['counts'], 'utf-8')
       results.extend(
         [{'image_id': index,
           'category_id': cat_id,

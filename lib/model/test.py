@@ -102,7 +102,7 @@ def im_detect(net, im):
   blobs['im_info'] = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
 
   _, scores, bbox_pred, rois, net_conv = net.test_image(blobs['data'], blobs['im_info'])
-  
+
   boxes = rois[:, 1:5] / im_scales[0] # (n, 4)
   scores = np.reshape(scores, [scores.shape[0], -1])
   bbox_pred = np.reshape(bbox_pred, [bbox_pred.shape[0], -1]) # (n, C*4)
@@ -156,7 +156,7 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
   all_boxes = [[[] for _ in range(num_images)]
          for _ in range(imdb.num_classes)]
   #  all_rles[cls][image] = [rle] array of N rles
-  all_rles = [[[] for _ in range(num_images)] 
+  all_rles = [[[] for _ in range(num_images)]
          for _ in range(imdb.num_classes)]
 
   output_dir = get_output_dir(imdb, weights_filename)
@@ -202,13 +202,13 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
         accumulated_labels += [j]*all_boxes[j][i].shape[0]
     accumulated_boxes = np.vstack(accumulated_boxes)   # acculuate max_per_image boxes [xyxy]
     accumulated_labels = np.array(accumulated_labels, dtype=np.uint8) # n category labels
-    mask_prob = net._predict_masks_from_boxes_and_labels(net_conv, 
+    mask_prob = net._predict_masks_from_boxes_and_labels(net_conv,
                             accumulated_boxes * im_scale,  # scaled boxes [xyxy]
                             accumulated_labels) # (n, 14, 14)
     mask_prob = mask_prob.data.cpu().numpy() # convert to numpy
     masks = recover_masks(mask_prob, accumulated_boxes, im.shape[0], im.shape[1]) # (n, ih, iw) uint8 [0,1]
     masks = (masks > 122.).astype(np.uint8)  # (n, ih, iw) uint8 [0,1] original size
-    
+
     # add to all_rles
     rles = [COCOmask.encode(np.asfortranarray(m)) for m in masks]
     ri = 0
@@ -227,7 +227,9 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
   det_file = os.path.join(output_dir, 'detections.pkl')
   with open(det_file, 'wb') as f:
     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
+  mask_file = os.path.join(output_dir, 'masks.pkl')
+  with open(mask_file, 'wb') as f:
+    pickle.dump(all_rles, f, pickle.HIGHEST_PROTOCOL)
 
   print('Evaluating detections')
   imdb.evaluate_detections(all_boxes, all_rles, output_dir)
-
