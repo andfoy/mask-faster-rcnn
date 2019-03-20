@@ -183,7 +183,7 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
       cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
         .astype(np.float32, copy=False)
       keep = nms(torch.from_numpy(cls_dets), cfg.TEST.NMS).numpy() if cls_dets.size > 0 else []
-      probs, indices = torch.from_numpy(scores[keep, :]).topk(2, dim=1)
+      probs, indices = torch.from_numpy(cls_scores[keep, :]).topk(2, dim=1)
       probs = probs.split(1, dim=0)
       indices = indices.split(1, dim=0)
       bboxes = torch.from_numpy(cls_dets[keep, :-1]).split(1, dim=0)
