@@ -178,7 +178,7 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
     # skip j = 0, because it's the background class
     for j in range(1, imdb.num_classes):
       inds = np.where(scores[:, j] > thresh)[0]
-      keep_scores = scores[inds, :]
+      keep_scores = scores[inds, 1:]
       cls_scores = scores[inds, j]
       cls_boxes = boxes[inds, j*4:(j+1)*4]
       cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
@@ -187,7 +187,7 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
       probs, indices = torch.from_numpy(keep_scores[keep, :]).topk(2, dim=1)
       probs = probs.split(1, dim=0)
       indices = indices.split(1, dim=0)
-      bboxes = torch.from_numpy(cls_dets[keep, :-1]).split(1, dim=0)
+      bboxes = torch.from_numpy(cls_dets[keep, :]).split(1, dim=0)
       entries = [dict(zip(entry_keys, t)) for t in zip(bboxes, probs, indices)]
       cls_dets = cls_dets[keep, :]
       all_boxes[j][i] = cls_dets
