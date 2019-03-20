@@ -224,7 +224,7 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
     for j in range(1, imdb.num_classes):
       ri_next = ri+all_boxes[j][i].shape[0]
       all_rles[j][i] = rles[ri:ri_next]
-      for entry, rle in zip(results[i], all_rles[j][i]):
+      for entry, rle in zip(results[i][j], all_rles[j][i]):
         entry['mask'] = rle
       assert len(all_rles[j][i]) == all_boxes[j][i].shape[0]
       ri = ri_next
