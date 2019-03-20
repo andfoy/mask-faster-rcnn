@@ -163,6 +163,9 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
   # timers
   _t = {'im_detect' : Timer(), 'misc' : Timer()}
 
+  results = {i: {j: [] for j in range(1, imdb.num_classes)}
+             for i in range(num_images)}
+  entry_keys = ('bbox', 'scores', 'cats')
   for i in range(num_images):
     im = cv2.imread(imdb.image_path_at(i))
 
@@ -180,8 +183,14 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
       cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
         .astype(np.float32, copy=False)
       keep = nms(torch.from_numpy(cls_dets), cfg.TEST.NMS).numpy() if cls_dets.size > 0 else []
+      probs, indices = torch.from_numpy(scores[keep, :]).topk(2, dim=1)
+      probs = probs.split(1, dim=0)
+      indices = indices.split(1, dim=0)
+      bboxes = torch.from_numpy(cls_dets[keep, :-1]).split(1, dim=0)
+      entries = [dict(zip(entry_keys, t)) for t in zip(bbox, probs, indices)]
       cls_dets = cls_dets[keep, :]
       all_boxes[j][i] = cls_dets
+      results[i][j] = entries
 
     # Limit to max_per_image detections *over all classes*
     if max_per_image > 0:
@@ -215,6 +224,8 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
     for j in range(1, imdb.num_classes):
       ri_next = ri+all_boxes[j][i].shape[0]
       all_rles[j][i] = rles[ri:ri_next]
+      for entry, rle in zip(results[i], all_rles[j][i]):
+        entry['mask'] = rle
       assert len(all_rles[j][i]) == all_boxes[j][i].shape[0]
       ri = ri_next
 
@@ -227,9 +238,8 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
   det_file = os.path.join(output_dir, 'detections.pkl')
   with open(det_file, 'wb') as f:
     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
-  mask_file = os.path.join(output_dir, 'masks.pkl')
-  with open(mask_file, 'wb') as f:
-    pickle.dump(all_rles, f, pickle.HIGHEST_PROTOCOL)
+  mask_file = os.path.join(output_dir, 'candidates.pth')
+  torch.save(results, mask_file)
 
   print('Evaluating detections')
   imdb.evaluate_detections(all_boxes, all_rles, output_dir)
