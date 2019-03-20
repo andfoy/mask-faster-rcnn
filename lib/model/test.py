@@ -187,7 +187,7 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
       probs = probs.split(1, dim=0)
       indices = indices.split(1, dim=0)
       bboxes = torch.from_numpy(cls_dets[keep, :-1]).split(1, dim=0)
-      entries = [dict(zip(entry_keys, t)) for t in zip(bbox, probs, indices)]
+      entries = [dict(zip(entry_keys, t)) for t in zip(bboxes, probs, indices)]
       cls_dets = cls_dets[keep, :]
       all_boxes[j][i] = cls_dets
       results[i][j] = entries
