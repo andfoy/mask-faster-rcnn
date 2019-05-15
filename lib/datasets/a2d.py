@@ -92,9 +92,9 @@ class a2d_coco(imdb):
     #   images/train2014/COCO_train2014_000000119993.jpg
     # file_name = ('COCO_' + self._data_name + '_' +
     #              str(index).zfill(12) + '.jpg')
-    img = self._COCO.loadImgs(index)[0]
-    file_name = img['file_name']
-    image_path = osp.join(self._data_path, 'Frames', file_name)
+    # img = self._COCO.loadImgs(index)
+    # file_name = img['file_name']
+    image_path = osp.join(self._data_path, 'Frames', f'{index}.jpg')
     assert osp.exists(image_path), \
       'Path does not exist: {}'.format(image_path)
     return image_path
