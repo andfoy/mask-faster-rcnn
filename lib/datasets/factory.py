@@ -14,6 +14,7 @@ __sets = {}
 import functools
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
+from datasets.a2d import a2d_coco
 from datasets.refer_coco import refer_coco
 from datasets.endovis import endovis_coco
 
@@ -46,9 +47,10 @@ for dataset in ['refcoco', 'refcocog']:
 # def dataset_closure(*args, **kwargs):
     # return endovis_coco(split, '2017')
 
-for split in ['group1', 'group2']:
-  name = f'endovis_2017_{split}'
-  __sets[name] = functools.partial(endovis_coco, split, '2017')
+__sets['a2d'] = functools.partial(a2d_coco, '')
+# for split in ['group1', 'group2']:
+#   name = f'endovis_2017_{split}'
+#   __sets[name] = functools.partial(endovis_coco, split, '2017')
 
 
 def get_imdb(name):
