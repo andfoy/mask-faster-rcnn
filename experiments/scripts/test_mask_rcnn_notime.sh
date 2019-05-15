@@ -22,7 +22,7 @@ TEST_IMDB="a2d"
 ITERS=1250000
 ANCHORS="[4,8,16,32]"
 RATIOS="[0.5,1,2]"
-DATA_DIR="/input"
+DATA_DIR="/input/a2d_leng_coco/"
 #     ;;
 #   *)
 #     echo "No dataset given"
