@@ -55,7 +55,7 @@ class a2d_coco(imdb):
       'train': 'train',  # 5k val2014 subset
       'val': 'val'
     }
-    coco_name = image_set + year  # e.g., "val2014"
+    coco_name = image_set + self._year  # e.g., "val2014"
     self._data_name = (self._view_map[coco_name]
                        if coco_name in self._view_map
                        else coco_name)
